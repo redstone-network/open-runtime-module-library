@@ -25,6 +25,7 @@ pub use nft::InspectExtended;
 pub use price::{DefaultPriceProvider, PriceProvider};
 pub use rewards::RewardHandler;
 use scale_info::TypeInfo;
+pub use transfer_protect::TransferProtectInterface;
 pub use xcm_transfer::XcmTransfer;
 
 pub mod arithmetic;
@@ -38,6 +39,7 @@ pub mod multi_asset;
 pub mod nft;
 pub mod price;
 pub mod rewards;
+pub mod transfer_protect;
 pub mod xcm_transfer;
 
 /// New data handler

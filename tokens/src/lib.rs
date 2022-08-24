@@ -68,7 +68,7 @@ use orml_traits::{
 	arithmetic::{self, Signed},
 	currency::TransferAll,
 	BalanceStatus, GetByKey, Happened, LockIdentifier, MultiCurrency, MultiCurrencyExtended, MultiLockableCurrency,
-	MultiReservableCurrency, NamedMultiReservableCurrency, OnDust,
+	MultiReservableCurrency, NamedMultiReservableCurrency, OnDust, TransferProtectInterface,
 };
 
 mod imbalances;
@@ -235,6 +235,8 @@ pub mod module {
 		// The whitelist of accounts that will not be reaped even if its total
 		// is zero or below ED.
 		type DustRemovalWhitelist: Contains<Self::AccountId>;
+
+		type TransferProtectInterface: TransferProtectInterface<Self::Balance>;
 	}
 
 	#[pallet::error]
@@ -255,6 +257,8 @@ pub mod module {
 		DeadAccount,
 		// Number of named reserves exceed `T::MaxReserves`
 		TooManyReserves,
+		OutOfAmountLimit,
+		OutOfTxBlockLimit,
 	}
 
 	#[pallet::event]
@@ -397,6 +401,10 @@ pub mod module {
 		ValueQuery,
 	>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn map_tx_count)]
+	pub(super) type MapTxCount<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, u64>;
+
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		pub balances: Vec<(T::AccountId, T::CurrencyId, T::Balance)>,
@@ -473,6 +481,17 @@ pub mod module {
 		) -> DispatchResult {
 			let from = ensure_signed(origin)?;
 			let to = T::Lookup::lookup(dest)?;
+
+			let amount_limit = T::TransferProtectInterface::get_amout_limit();
+			if amount_limit != Default::default() {
+				ensure!(amount < amount_limit, Error::<T>::OutOfAmountLimit);
+			}
+
+			let count = MapTxCount::<T>::get(&from).unwrap_or_default();
+			let count_limit = T::TransferProtectInterface::get_tx_block_limit();
+			ensure!(count < count_limit, Error::<T>::OutOfTxBlockLimit);
+			MapTxCount::<T>::insert(&from, count + 1);
+
 			Self::do_transfer(currency_id, &from, &to, amount, ExistenceRequirement::AllowDeath)
 		}
 
