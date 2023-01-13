@@ -269,6 +269,17 @@ parameter_types! {
 	pub DustReceiver: AccountId = PalletId(*b"orml/dst").into_account_truncating();
 }
 
+pub struct TestTransferProtect;
+
+impl TransferProtectInterface<Balance> for TestTransferProtect {
+	fn get_amout_limit() -> Balance {
+		Default::default()
+	}
+	fn get_tx_block_limit() -> u64 {
+		100u64
+	}
+}
+
 impl Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
@@ -283,6 +294,7 @@ impl Config for Runtime {
 	type MaxReserves = ConstU32<2>;
 	type ReserveIdentifier = ReserveIdentifier;
 	type DustRemovalWhitelist = MockDustRemovalWhitelist;
+	type TransferProtectInterface = TestTransferProtect;
 }
 pub type TreasuryCurrencyAdapter = <Runtime as pallet_treasury::Config>::Currency;
 

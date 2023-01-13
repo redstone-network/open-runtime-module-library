@@ -9,6 +9,7 @@ use frame_support::{
 	PalletId,
 };
 use orml_traits::parameter_type_with_key;
+use orml_traits::TransferProtectInterface;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -73,6 +74,17 @@ parameter_types! {
 	pub DustAccount: AccountId = PalletId(*b"orml/dst").into_account_truncating();
 }
 
+pub struct TestTransferProtect;
+
+impl TransferProtectInterface<Balance> for TestTransferProtect {
+	fn get_amout_limit() -> Balance {
+		Default::default()
+	}
+	fn get_tx_block_limit() -> u64 {
+		100u64
+	}
+}
+
 impl orml_tokens::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
@@ -87,6 +99,7 @@ impl orml_tokens::Config for Runtime {
 	type DustRemovalWhitelist = Nothing;
 	type OnNewTokenAccount = ();
 	type OnKilledTokenAccount = ();
+	type TransferProtectInterface = TestTransferProtect;
 }
 
 pub const NATIVE_CURRENCY_ID: CurrencyId = 1;
